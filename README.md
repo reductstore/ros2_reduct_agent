@@ -1,5 +1,6 @@
 # ros2_reduct_agent
 
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/reductstore/ros2_reduct_agent/ci.yml?branch=main)](https://github.com/reductstore/ros2_reduct_agent/actions)
 [![Community](https://img.shields.io/discourse/status?server=https%3A%2F%2Fcommunity.reduct.store
 )](https://community.reduct.store/signup)
 
@@ -33,19 +34,21 @@ This agent is tested with:
 The agent is configured using a YAML file. Each pipeline is an independent logging unit (only one type of pipeline is supported at the moment where all topics are recorded continuously without filtering).
 
 ```yaml
-recorder:
-  storage: # local ReductStore instance
-    url: "http://localhost:8383"   
-    api_token: "access_token"
-    bucket: "ros-data"
-  pipelines:
-    telemetry:
-      entry: telemetry # entry name in ReductStore
-      output_format: mcap # only mcap is supported as of now
-      # NOTE: All topics are recorded continuously. Topic filtering will be supported in future versions.
-      split:
-        max_duration_s: 300
-        max_size_bytes: 250_000_000
+/**/*:
+  ros__parameters:
+    storage: # local ReductStore instance
+      url: "http://localhost:8383"
+      api_token: "access_token"
+      bucket: "ros_data"
+    pipelines:
+      telemetry:
+        # output_format: mcap # only mcap is supported as of now
+        filename_mode: "timestamp" # or "incremental" to name files 0, 1, 2...
+        include_topics: 
+          - /recorder/input
+        split:
+          max_duration_s: 3600
+          max_size_bytes: 10000
 ```
 
 ## Installing
@@ -53,13 +56,21 @@ recorder:
 Build and run in a ROS 2 workspace:
 
 ```bash
+# 1. Clone your repo and enter the workspace
 mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/src
 git clone https://github.com/reductstore/ros2-reduct-agent.git
 cd ..
+
+# 2. Install system dependencies
+rosdep install --from-paths src --ignore-src -r -y
+
+# 3. Build your package
 colcon build --packages-select ros2_reduct_agent
+
+# 4. Source the workspace and run your node
 source install/local_setup.bash
-ros2 run ros2_reduct_agent recorder_node --ros-args --params-file ./config.yaml
+ros2 run ros2_reduct_agent recorder --ros-args --params-file ./config.yaml
 ```
 
 ## Configuration
@@ -70,42 +81,6 @@ Each pipeline has the following parameters:
 * `entry`: The name of the entry in ReductStore where the data will be stored.
 * `output_format`: The format of the output data. Currently, only `mcap` is supported.
 * `split`: A dictionary that specifies how to split the data. It can be based on maximum duration or size. The `max_duration_s` key specifies the maximum duration in seconds for each split, while the `max_size_bytes` key specifies the maximum size in bytes for each split.
-
-### Container Images
-
-| Description | Image:Tag | Default Command |
-| --- | --- | -- |
-|  |  |  |
-
-### Subscribed Topics
-
-| Topic | Type | Description |
-| --- | --- | --- |
-|  |  |  |
-
-### Published Topics
-
-| Topic | Type | Description |
-| --- | --- | --- |
-|  |  |  |
-
-### Services
-
-| Service | Type | Description |
-| --- | --- | --- |
-|  |  |  |
-
-### Actions
-
-| Action | Type | Description |
-| --- | --- | --- |
-|  |  |  |
-
-### Parameters
-
-| Parameter | Type | Description |
-| --- | --- | --- |
-|  |  |  |
 
 ## Links
 
